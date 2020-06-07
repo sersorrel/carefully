@@ -1,0 +1,64 @@
+#!/bin/bash
+
+set -e
+
+elevate() {
+	# TODO: not everyone has sudo
+	sudo "$@"
+}
+
+Yn() {
+	while true; do
+		read -rp "$1 [Y/n] "
+		case $REPLY in
+			y|Y|"") return 0;;
+			n|N) return 1;;
+		esac
+	done
+}
+
+if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	printf 'Usage: %s COMMAND...\n' "$0" >&2
+	exit 1
+fi
+
+tmpdir=$(realpath .carefully)
+if [ ! -e "$tmpdir/pkg-data" ] || [ ! -t 0 ] || [ ! -t 1 ] || Yn "package data already exists, overwrite?"; then
+	if [ -e "$tmpdir/pkg-data/DEBIAN" ]; then
+		mv "$tmpdir/pkg-data/DEBIAN" "$tmpdir/DEBIAN-tmp"
+	fi
+	elevate rm -rf "$tmpdir/pkg-data"
+	mkdir -p "$tmpdir/pkg-data"
+	if [ -e "$tmpdir/DEBIAN-tmp" ]; then
+		mv "$tmpdir/DEBIAN-tmp" "$tmpdir/pkg-data/DEBIAN"
+	fi
+	elevate "$(which jan)" "$tmpdir/pkg-data" "$@"
+fi
+mkdir -p "$tmpdir/pkg-data/DEBIAN"
+if ! [ -e "$tmpdir/pkg-data/DEBIAN/control" ]; then
+	cat > "$tmpdir/pkg-data/DEBIAN/control" <<-EOF
+	# Edit this file, replacing all fields marked [TODO] with the correct value, then save and quit.
+	# All fields except the first three are optional, though Maintainer, Section, and Description are highly recommended.
+	# If you want to inspect the package before it is built, look in $(realpath "$tmpdir/pkg-data").
+	Package: [TODO (at least 2 characters, starting with [a-z0-9], containing only [a-z0-9+.-])]
+	Version: [TODO (format: [epoch:]version[-debianversion], where epoch is an integer (usually not needed), version is [a-zA-Z0-9.+~-] and starts with [0-9], and debianversion is [a-zA-Z0-9+.~])]
+	Architecture: [TODO (probably either "all" or "$(dpkg-architecture -q DEB_TARGET_ARCH)", depending on whether there are binaries in the package)]
+	Maintainer: [TODO (in the format "A Name <email-address@example.com>")]
+	Homepage: [TODO (a URL, with no surrounding brackets)]
+	Section: [TODO (see https://packages.debian.org/unstable/ for a list of section names)]
+	Priority: optional
+	Installed-Size: $(du -skc "$tmpdir/pkg-data" | tail -n1 | cut -f1)
+	Depends: [TODO (comma-separated package names)]
+	Description: [TODO]
+
+	# Do not delete the blank line above.
+	# vim: set ft=debcontrol:
+	EOF
+fi
+printf 'Launching your editor to set the package metadata...\n'
+$EDITOR "$tmpdir/pkg-data/DEBIAN/control"
+sed -i '/^#/d' "$tmpdir/pkg-data/DEBIAN/control"
+dpkg-deb --build "$tmpdir/pkg-data" . || {
+	printf '\nFailed to build the package. Rerun the following command to retry:\n$ %s\n' "dpkg-deb --build \"$tmpdir/pkg-data\" ."
+	printf '\nTo regenerate the control file from scratch next time, run:\n$ %s\n' "rm \"$tmpdir/pkg-data/DEBIAN/control\""
+}

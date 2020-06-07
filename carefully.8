@@ -1,0 +1,37 @@
+.TH CAREFULLY 8 "5 June 2020"
+.SH NAME
+carefully \- automated Debian package creation
+.SH SYNOPSIS
+.B carefully
+.IR command ...
+.SH DESCRIPTION
+\fBcarefully\fR captures the files created by a command like "make install", and semi-automatically creates a Debian package to install the same files in a way that the package manager can keep track of.
+.PP
+\fBcarefully\fR will create a .carefully/ directory in the current directory, which contains the files created by \fIcommand\fR, along with packaging metadata.
+After \fIcommand\fR exits, \fBcarefully\fR will open the Debian control file in your $EDITOR, to allow you to set metadata like the package name; once the editor exits, a Debian package (.deb file) will be created in the current directory.
+If data from a previous invocation of \fBcarefully\fR already exists, \fBcarefully\fR will prompt before overwriting it, but in any case will always open the control file for you to edit, and will also recreate the Debian package from scratch upon every invocation.
+.PP
+\fBcarefully\fR should \fInot\fR be run as root.
+It will elevate privileges with sudo(8) when necessary.
+\fIcommand\fR \fIwill\fR be run as root, however, so you should include a call to su(1) or similar in \fIcommand\fR if the installation must be run as a non-root user (though if you are packaging software for installation system-wide, running the installation as root seems likely to be correct).
+.SH OPTIONS
+There are no options.
+.SH EXAMPLES
+.nf
+carefully make install
+.fi
+.SH BUGS
+.IP \(bu 2
+\fBcarefully\fR does not know how to use commands other than sudo(8) to become root.
+.IP \(bu
+\fIcommand\fR's output files are captured using jan(8).
+Currently, jan(8) uses overlayfs to achieve this, which has limitations with certain filesystems (e.g. sysfs) \-\- you may encounter things like mounted filesystems not being visible to \fIcommand\fR, for example, or modifications made to the filesystem after \fIcommand\fR has started running not being visible to \fIcommand\fR.
+(Modifying the underlying filesystems during execution of \fIcommand\fR is "not allowed" according to the Linux documentation \%(Documentation/filesystems/overlayfs.txt), though in practice it doesn't appear to cause too many problems.)
+.IP \(bu
+\fBcarefully\fR doesn't perform any checks on the files produced by \fIcommand\fR before building the package, so if \fIcommand\fR does things like deleting files or creating files that shouldn't be installed, manual intervention will be needed to create a sensible Debian package.
+.SH AUTHOR
+Written by Ash Holland <ash@sorrel.sh>.
+.SH COPYRIGHT
+Copyright \(co 2020 Ash Holland. Licensed under the EUPL (1.2 or later).
+.SH SEE ALSO
+jan(8), checkinstall(8)
