@@ -39,7 +39,7 @@ if ! [ -e "$tmpdir/pkg-data/DEBIAN/control" ]; then
 	cat > "$tmpdir/pkg-data/DEBIAN/control" <<-EOF
 	# Edit this file, replacing all fields marked [TODO] with the correct value, then save and quit.
 	# All fields except the first three are optional, though Maintainer, Section, and Description are highly recommended.
-	# If you want to inspect the package before it is built, look in $(realpath "$tmpdir/pkg-data").
+	# If you want to inspect the package before it is built, look in $(realpath "$tmpdir/pkg-data")
 	Package: [TODO (at least 2 characters, starting with [a-z0-9], containing only [a-z0-9+.-])]
 	Version: [TODO (format: [epoch:]version[-debianversion], where epoch is an integer (usually not needed), version is [a-zA-Z0-9.+~-] and starts with [0-9], and debianversion is [a-zA-Z0-9+.~])]
 	Architecture: [TODO (probably either "all" or "$(dpkg-architecture -q DEB_TARGET_ARCH)", depending on whether there are binaries in the package)]
