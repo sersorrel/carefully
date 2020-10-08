@@ -23,13 +23,12 @@ if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 fi
 
 tmpdir=$(realpath .carefully)
-mkdir -p "$tmpdir"
 if [ ! -e "$tmpdir/pkg-data" ] || [ ! -t 0 ] || [ ! -t 1 ] || Yn "package data already exists, overwrite?"; then
 	if [ -e "$tmpdir/pkg-data/DEBIAN" ]; then
 		mv "$tmpdir/pkg-data/DEBIAN" "$tmpdir/DEBIAN-tmp"
 	fi
 	elevate rm -rf "$tmpdir/pkg-data"
-	elevate mkdir -p "$tmpdir/pkg-data"
+	mkdir -p "$tmpdir/pkg-data"
 	if [ -e "$tmpdir/DEBIAN-tmp" ]; then
 		mv "$tmpdir/DEBIAN-tmp" "$tmpdir/pkg-data/DEBIAN"
 	fi
